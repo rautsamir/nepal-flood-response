@@ -1,0 +1,38 @@
+{
+  "name": "UNFRC - HDX Daily Ingestion",
+  "description": "Checks HDX resource hashes and refreshes curated Nepal flood GeoJSON tables when sources change.",
+  "max_concurrent_runs": 1,
+  "timeout_seconds": 1800,
+  "schedule": {
+    "quartz_cron_expression": "0 0 2 * * ?",
+    "timezone_id": "Asia/Kathmandu",
+    "pause_status": "UNPAUSED"
+  },
+  "tasks": [
+    {
+      "task_key": "ingest_hdx_resources",
+      "notebook_task": {
+        "notebook_path": "/Workspace/Users/samir.raut@databricks.com/unfrc-hdx-ingestion/hdx_ingestion",
+        "source": "WORKSPACE",
+        "base_parameters": {
+          "catalog": "rautsamir",
+          "schema": "nepal_flood_response",
+          "volume": "source_files"
+        }
+      },
+      "environment_key": "default"
+    }
+  ],
+  "environments": [
+    {
+      "environment_key": "default",
+      "spec": {
+        "client": "1"
+      }
+    }
+  ],
+  "tags": {
+    "project": "unfrc",
+    "source": "hdx"
+  }
+}

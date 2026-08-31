@@ -1,0 +1,23 @@
+bundle:
+  name: unfrc_hdx_ingestion
+
+include:
+  - resources/*.yml
+
+variables:
+  catalog:
+    default: rautsamir
+  schema:
+    default: nepal_flood_response
+  volume:
+    default: source_files
+
+targets:
+  prod:
+    mode: production
+    default: true
+    workspace:
+      host: https://adb-3438839487639471.11.azuredatabricks.net
+      root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}
+    run_as:
+      user_name: ${workspace.current_user.userName}

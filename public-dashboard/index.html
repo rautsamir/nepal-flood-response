@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Open-data flood impact and access dashboard for Nepal">
+  <title>Nepal Flood Response Map</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%2310243a'/%3E%3Cpath d='M12 43c8-8 13-19 18-30 5 13 11 23 22 30-5 6-12 9-20 9s-15-3-20-9Z' fill='%23fff'/%3E%3Cpath d='M8 46c9-4 17-4 25 0 8 4 16 4 23 0' fill='none' stroke='%23dc334c' stroke-width='6'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="#" aria-label="Nepal Flood Response Map home">
+      <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span>
+        <strong data-i18n="brand">Nepal Flood Response Map</strong>
+        <small data-i18n="brandSub">Open-data situation dashboard</small>
+      </span>
+    </a>
+    <div class="header-actions">
+      <span class="as-of" id="as-of">Loading snapshot…</span>
+      <div class="language" role="group" aria-label="Language">
+        <button id="lang-en" class="active" type="button">EN</button>
+        <button id="lang-ne" type="button">ने</button>
+      </div>
+      <button class="method-button" id="open-method" type="button" data-i18n="method">Methodology</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div>
+        <p class="eyebrow" data-i18n="eyebrow">BHOTEKOSHI–TRISHULI CORRIDOR · OPEN DATA</p>
+        <h1 data-i18n="title">Where damage and access constraints overlap</h1>
+        <p class="hero-copy" data-i18n="intro">A public view of building damage, estimated population exposure, bridge access and response infrastructure. Explore the evidence—not a forecast or official assessment.</p>
+      </div>
+      <div class="status-block">
+        <span class="status-dot"></span>
+        <div>
+          <strong data-i18n="snapshot">Static lakehouse snapshot</strong>
+          <span data-i18n="snapshotSub">No login, no AI-generated answers</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="metrics" aria-label="Impact summary">
+      <article>
+        <span class="metric-icon red" aria-hidden="true">⌂</span>
+        <div><small data-i18n="damaged">Damaged buildings</small><strong id="metric-damaged">—</strong></div>
+      </article>
+      <article>
+        <span class="metric-icon amber" aria-hidden="true">◎</span>
+        <div><small data-i18n="people">People in damaged footprint</small><strong id="metric-people">—</strong></div>
+      </article>
+      <article>
+        <span class="metric-icon navy" aria-hidden="true">◇</span>
+        <div><small data-i18n="isolated">Likely isolated cells</small><strong id="metric-isolated">—</strong></div>
+      </article>
+      <article>
+        <span class="metric-icon blue" aria-hidden="true">▦</span>
+        <div><small data-i18n="cells">Affected ~1 km cells</small><strong id="metric-cells">—</strong></div>
+      </article>
+    </section>
+
+    <section class="workspace">
+      <aside class="control-panel">
+        <div class="panel-heading">
+          <div>
+            <p class="section-label" data-i18n="explore">EXPLORE</p>
+            <h2 data-i18n="filters">Filter the response picture</h2>
+          </div>
+          <button id="reset-filters" class="text-button" type="button" data-i18n="reset">Reset</button>
+        </div>
+
+        <label class="field">
+          <span data-i18n="district">District</span>
+          <select id="district-filter"><option value="">All districts</option></select>
+        </label>
+
+        <div class="field">
+          <span data-i18n="access">Access condition</span>
+          <div class="segmented">
+            <button type="button" class="active" data-isolation="all" data-i18n="all">All</button>
+            <button type="button" data-isolation="isolated" data-i18n="isolatedShort">Likely isolated</button>
+            <button type="button" data-isolation="connected" data-i18n="connected">No nearby bridge damage</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="range-label">
+            <span data-i18n="priority">Minimum priority percentile</span>
+            <strong id="priority-value">0%</strong>
+          </div>
+          <input id="priority-filter" type="range" min="0" max="90" value="0" step="10">
+          <div class="range-scale"><span>0%</span><span>90%</span></div>
+        </div>
+
+        <fieldset class="layers">
+          <legend data-i18n="layers">Map layers</legend>
+          <label><input type="checkbox" value="health"><i class="dot health"></i><span data-i18n="health">Health facilities</span><b id="count-health">0</b></label>
+          <label><input type="checkbox" value="education"><i class="dot education"></i><span data-i18n="education">Education</span><b id="count-education">0</b></label>
+          <label><input type="checkbox" value="open_space"><i class="dot open-space"></i><span data-i18n="openSpace">Open spaces</span><b id="count-open_space">0</b></label>
+          <label><input type="checkbox" value="hydropower"><i class="dot hydropower"></i><span data-i18n="hydropower">Hydropower</span><b id="count-hydropower">0</b></label>
+          <label><input type="checkbox" value="bridges" checked><i class="dot bridges"></i><span data-i18n="bridges">Damaged bridges</span><b id="count-bridges">0</b></label>
+          <label><input type="checkbox" value="helipads"><i class="dot helipads"></i><span data-i18n="helipads">Helipads</span><b id="count-helipads">0</b></label>
+          <label><input type="checkbox" value="flood" checked><i class="dot flood"></i><span data-i18n="floodExtent">Observed flood extent</span></label>
+        </fieldset>
+      </aside>
+
+      <section class="map-panel">
+        <div id="map" aria-label="Interactive flood response map"></div>
+        <div class="map-legend">
+          <span data-i18n="needLegend">PRIORITY SCORE</span>
+          <i class="low"></i><small data-i18n="lower">Lower</small>
+          <i class="medium"></i>
+          <i class="high"></i><small data-i18n="higher">Higher</small>
+        </div>
+        <div class="map-count"><strong id="visible-count">0</strong> <span data-i18n="cellsVisible">cells visible</span></div>
+      </section>
+    </section>
+
+    <section class="analysis-grid">
+      <article class="district-card">
+        <div class="panel-heading">
+          <div>
+            <p class="section-label" data-i18n="comparison">DISTRICT COMPARISON</p>
+            <h2 data-i18n="districtNeed">Relative priority score</h2>
+          </div>
+        </div>
+        <div id="district-bars" class="district-bars"></div>
+        <p class="caption" data-i18n="districtCaption">Score combines damage-weighted population with nearby bridge failures. Compare relative urgency; do not interpret as a casualty estimate.</p>
+      </article>
+
+      <article class="priority-card">
+        <div class="panel-heading">
+          <div>
+            <p class="section-label" data-i18n="highest">HIGHEST PRIORITY LOCATIONS</p>
+            <h2 data-i18n="ranked">Ranked evidence</h2>
+          </div>
+          <label class="search"><span aria-hidden="true">⌕</span><input id="table-search" type="search" placeholder="Search location"></label>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th data-sort="place_name" data-i18n="location">Location</th>
+                <th data-sort="district" data-i18n="district">District</th>
+                <th data-sort="damaged_bld" class="numeric" data-i18n="damagedShort">Damaged</th>
+                <th data-sort="population" class="numeric" data-i18n="population">Population</th>
+                <th data-sort="damaged_bridges_5km" class="numeric" data-i18n="bridges5">Bridges ≤5 km</th>
+                <th data-sort="nearest_helipad_km" class="numeric" data-i18n="helipad">Helipad</th>
+                <th data-sort="priority_score" class="numeric" data-i18n="priorityShort">Priority</th>
+              </tr>
+            </thead>
+            <tbody id="priority-table"></tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+
+    <section class="source-strip">
+      <div>
+        <p class="section-label" data-i18n="provenance">PROVENANCE</p>
+        <h2 data-i18n="sourcesTitle">Built from open humanitarian evidence</h2>
+      </div>
+      <div class="source-list">
+        <span>Overture + Microsoft AI for Good <small data-i18n="buildingDamage">Building damage</small></span>
+        <span>IHME <small data-i18n="populationGrid">Population grid</small></span>
+        <span>HOT / OpenStreetMap <small data-i18n="accessInfra">Access & infrastructure</small></span>
+        <span>HDX <small data-i18n="operationalLayers">Operational layers</small></span>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p data-i18n="disclaimer">Prototype derived from open data. Not an official assessment. Validate locally before operational use.</p>
+    <a href="#methodology" id="footer-method" data-i18n="readMethod">Read methodology</a>
+  </footer>
+
+  <dialog id="method-dialog">
+    <button class="dialog-close" id="close-method" type="button" aria-label="Close">×</button>
+    <p class="section-label" data-i18n="methodologyLabel">METHODOLOGY</p>
+    <h2 data-i18n="howRanked">How locations are ranked</h2>
+    <div class="formula"><code>acute need = damaged buildings × population</code></div>
+    <div class="formula"><code>priority = acute need × (1 + 0.5 × damaged bridges within 5 km)</code></div>
+    <p data-i18n="methodCopy">Buildings are grouped into approximately 1 km cells and joined to a population grid. Nearby damaged bridges increase the priority score as an access constraint. Helipad distance is shown as context but does not change the score.</p>
+    <p data-i18n="methodCaution">These are relative triage indicators, not counts of casualties, displaced people or verified unmet need.</p>
+  </dialog>
+
+  <div id="loading" class="loading-screen"><span></span><p>Loading lakehouse snapshot…</p></div>
+  <div id="error" class="error-banner" hidden>Unable to load the public data snapshot. Please try again later.</div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="./app.js"></script>
+</body>
+</html>

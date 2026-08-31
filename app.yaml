@@ -1,0 +1,16 @@
+command:
+  - uvicorn
+  - backend.main:app
+  - --host
+  - 0.0.0.0
+  - --port
+  - "8000"
+env:
+  - name: DATABRICKS_SERVING_ENDPOINT
+    value: databricks-claude-sonnet-4-6
+  - name: SQL_WAREHOUSE_ID
+    value: a5a3dba67a13c1b8
+  - name: UNFRC_CATALOG
+    value: rautsamir
+  - name: UNFRC_SCHEMA
+    value: nepal_flood_response

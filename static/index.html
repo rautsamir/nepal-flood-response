@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Bilingual flood-response intelligence for Nepal">
+  <title>UNFRC · Nepal Flood Response</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22><rect width=%2232%22 height=%2232%22 rx=%228%22 fill=%22%23d8373e%22/><path d=%22M8 22V10l8-3 8 3v12l-8 3-8-3Zm0-12 8 3 8-3M16 13v12%22 fill=%22none%22 stroke=%22white%22 stroke-width=%222%22/></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <style>
+    :root {
+      --ink: #172331;
+      --ink-2: #435160;
+      --muted: #6e7a86;
+      --canvas: #f3f5f3;
+      --surface: #ffffff;
+      --surface-2: #f8faf8;
+      --line: #dde3df;
+      --line-strong: #cbd4cf;
+      --navy: #13293d;
+      --navy-2: #1b3a52;
+      --red: #d8373e;
+      --red-dark: #ae252d;
+      --teal: #087f75;
+      --amber: #d99218;
+      --green: #24855b;
+      --blue: #2875b8;
+      --shadow: 0 10px 32px rgba(24, 40, 52, .09);
+      --shadow-lg: 0 24px 70px rgba(19, 41, 61, .2);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; overflow: hidden; }
+    body {
+      color: var(--ink);
+      background: var(--canvas);
+      font-family: "DM Sans", "Noto Sans Devanagari", system-ui, sans-serif;
+      overflow: hidden;
+    }
+    button, input { font: inherit; }
+    button { color: inherit; }
+
+    .app-shell { height: 100vh; display: flex; flex-direction: column; }
+    .topbar {
+      height: 72px;
+      flex: 0 0 72px;
+      display: flex;
+      align-items: center;
+      gap: 22px;
+      padding: 0 24px;
+      color: #fff;
+      background: var(--navy);
+      border-bottom: 3px solid var(--red);
+      z-index: 1200;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; min-width: 300px; }
+    .brand-mark {
+      position: relative;
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      background: var(--red);
+      border-radius: 10px 10px 10px 3px;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.18);
+    }
+    .brand-mark svg { width: 23px; height: 23px; }
+    .brand-title { font-size: 16px; font-weight: 700; letter-spacing: .02em; line-height: 1.15; }
+    .brand-subtitle { margin-top: 4px; color: #b8c6d1; font-size: 11px; letter-spacing: .055em; text-transform: uppercase; }
+    .top-context {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding-left: 22px;
+      border-left: 1px solid rgba(255,255,255,.16);
+      color: #cfdae2;
+      font-size: 13px;
+    }
+    .live-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #58d69a;
+      box-shadow: 0 0 0 4px rgba(88,214,154,.14);
+    }
+    .top-actions { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+    .icon-button, .language-switch {
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(255,255,255,.06);
+      color: #fff;
+      border-radius: 9px;
+    }
+    .icon-button {
+      width: 38px; height: 38px; display: grid; place-items: center; cursor: pointer;
+      transition: .16s ease;
+    }
+    .icon-button:hover { background: rgba(255,255,255,.12); transform: translateY(-1px); }
+    .icon-button svg { width: 18px; height: 18px; }
+    .language-switch { display: flex; padding: 3px; gap: 2px; }
+    .language-switch button {
+      min-width: 68px;
+      padding: 7px 11px;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: #c8d4dd;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .language-switch button.active { color: var(--navy); background: #fff; }
+
+    .workspace {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: clamp(460px, 29vw, 560px) minmax(0, 1fr);
+      overflow: hidden;
+    }
+    .assistant-panel {
+      position: relative;
+      min-width: 0;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--surface);
+      border-right: 1px solid var(--line);
+      z-index: 900;
+    }
+    .panel-heading { padding: 22px 22px 17px; border-bottom: 1px solid var(--line); }
+    .eyebrow {
+      color: var(--red);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+    }
+    .panel-heading h1 { margin: 7px 0 5px; font-size: 22px; letter-spacing: -.025em; line-height: 1.2; }
+    .panel-heading p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
+
+    #chat {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      padding: 18px 18px 6px;
+      scroll-behavior: smooth;
+    }
+    .message { display: flex; gap: 9px; margin-bottom: 15px; animation: enter .22s ease-out; }
+    @keyframes enter { from { opacity: 0; transform: translateY(5px); } }
+    .message.user { justify-content: flex-end; }
+    .avatar {
+      width: 29px; height: 29px; flex: 0 0 29px;
+      display: grid; place-items: center;
+      border-radius: 8px;
+      color: #fff;
+      background: var(--navy);
+    }
+    .avatar svg { width: 16px; height: 16px; }
+    .bubble {
+      max-width: calc(100% - 40px);
+      padding: 11px 13px;
+      border: 1px solid var(--line);
+      border-radius: 3px 13px 13px 13px;
+      color: var(--ink-2);
+      background: var(--surface-2);
+      font-size: 13.5px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+    }
+    .user .bubble {
+      color: #fff;
+      background: var(--navy-2);
+      border-color: var(--navy-2);
+      border-radius: 13px 13px 3px 13px;
+    }
+    .query-details { margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--line); }
+    .query-details summary {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      user-select: none;
+    }
+    .query-details pre {
+      margin: 8px 0 0;
+      padding: 9px;
+      overflow-x: auto;
+      color: #a8d7d1;
+      background: var(--navy);
+      border-radius: 6px;
+      font: 10.5px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace;
+      white-space: pre-wrap;
+    }
+    .thinking { display: inline-flex; gap: 4px; align-items: center; }
+    .thinking i { width: 5px; height: 5px; border-radius: 50%; background: var(--teal); animation: pulse 1s infinite; }
+    .thinking i:nth-child(2) { animation-delay: .15s; }
+    .thinking i:nth-child(3) { animation-delay: .3s; }
+    @keyframes pulse { 0%,70%,100% { opacity: .25; transform: translateY(0); } 35% { opacity: 1; transform: translateY(-2px); } }
+
+    .prompt-section { padding: 8px 18px 12px; }
+    .prompt-label { margin-bottom: 8px; color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+    #suggestions { display: grid; gap: 6px; max-height: 172px; overflow-y: auto; padding-right: 2px; }
+    .prompt {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 9px 11px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      color: var(--ink-2);
+      background: #fff;
+      font-size: 12px;
+      text-align: left;
+      cursor: pointer;
+      transition: .15s ease;
+    }
+    .prompt:hover { border-color: #9fb3ad; background: #f7faf8; transform: translateX(2px); }
+    .prompt svg { width: 14px; height: 14px; flex: none; color: var(--teal); }
+
+    .composer { padding: 12px 18px 16px; border-top: 1px solid var(--line); background: #fff; }
+    .composer-box {
+      display: flex; align-items: flex-end; gap: 8px;
+      padding: 6px 6px 6px 13px;
+      border: 1px solid var(--line-strong);
+      border-radius: 12px;
+      box-shadow: 0 3px 12px rgba(23,35,49,.04);
+      transition: .16s ease;
+    }
+    .composer-box:focus-within { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(8,127,117,.1); }
+    .composer input { flex: 1; min-width: 0; height: 38px; border: 0; outline: 0; color: var(--ink); background: transparent; font-size: 13px; }
+    .composer input::placeholder { color: #929ca5; }
+    .send-button {
+      width: 38px; height: 38px; flex: none;
+      display: grid; place-items: center;
+      border: 0; border-radius: 9px;
+      color: #fff; background: var(--red);
+      cursor: pointer;
+      transition: .16s ease;
+    }
+    .send-button:hover { background: var(--red-dark); transform: translateY(-1px); }
+    .send-button:disabled { cursor: wait; opacity: .55; transform: none; }
+    .send-button svg { width: 17px; height: 17px; }
+    .composer-note { margin-top: 8px; color: #8a949d; font-size: 10px; text-align: center; }
+
+    .intelligence-panel {
+      min-width: 0;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--canvas);
+    }
+    .status-strip {
+      height: 68px; flex: 0 0 68px;
+      display: flex; align-items: stretch;
+      background: var(--surface);
+      border-bottom: 1px solid var(--line);
+    }
+    .stat { min-width: 150px; display: flex; flex-direction: column; justify-content: center; padding: 0 22px; border-right: 1px solid var(--line); }
+    .stat-label { color: var(--muted); font-size: 9px; font-weight: 700; letter-spacing: .11em; text-transform: uppercase; }
+    .stat-value { margin-top: 5px; color: var(--ink); font-size: 14px; font-weight: 700; }
+    .stat-value.status { color: var(--green); }
+    .scope-note { margin-left: auto; display: flex; align-items: center; gap: 8px; padding: 0 22px; color: var(--muted); font-size: 11px; }
+    .scope-note svg { width: 15px; height: 15px; color: var(--amber); }
+
+    .map-stage { position: relative; flex: 1 1 0; min-height: 0; overflow: hidden; }
+    #map { position: absolute; inset: 0; width: 100%; height: 100%; background: #dce4df; }
+    .leaflet-control-zoom { border: 0 !important; box-shadow: var(--shadow) !important; }
+    .leaflet-control-zoom a { color: var(--navy) !important; border-color: var(--line) !important; }
+    .leaflet-control-attribution { font-size: 9px !important; }
+    .map-label {
+      position: absolute; top: 16px; left: 16px; z-index: 500;
+      padding: 10px 13px;
+      border: 1px solid rgba(255,255,255,.7);
+      border-radius: 9px;
+      background: rgba(255,255,255,.92);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+    }
+    .map-label strong { display: block; font-size: 12px; }
+    .map-label span { display: block; margin-top: 2px; color: var(--muted); font-size: 10px; }
+    .legend {
+      position: absolute; right: 16px; bottom: 18px; z-index: 500;
+      min-width: 160px; padding: 12px 14px;
+      border: 1px solid rgba(255,255,255,.75);
+      border-radius: 9px;
+      background: rgba(255,255,255,.94);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+    }
+    .legend-title { margin-bottom: 8px; font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+    .legend-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; color: var(--ink-2); font-size: 10px; }
+    .legend-dot { width: 9px; height: 9px; border-radius: 50%; }
+    .legend-hint { margin-top: 9px; padding-top: 8px; border-top: 1px solid var(--line); color: var(--muted); font-size: 9px; }
+    .poi-control {
+      position: absolute; top: 16px; right: 16px; z-index: 500;
+      width: 178px; padding: 11px 12px;
+      border: 1px solid rgba(255,255,255,.75); border-radius: 9px;
+      background: rgba(255,255,255,.94); box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+    }
+    .poi-control-title { display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px; font-size: 10px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }
+    #poi-total { padding: 2px 6px; color: var(--muted); background: var(--canvas); border-radius: 8px; font-size: 9px; }
+    .poi-option { display: flex; align-items: center; gap: 7px; padding: 3px 0; color: var(--ink-2); font-size: 10px; cursor: pointer; }
+    .poi-option input { margin: 0; accent-color: var(--teal); }
+    .poi-symbol { width: 8px; height: 8px; flex: none; border-radius: 2px; }
+
+    .results-panel { height: 238px; flex: 0 0 238px; display: flex; flex-direction: column; background: #fff; transition: flex-basis .22s ease; }
+    .table-resizer {
+      height: 7px; flex: 0 0 7px; position: relative;
+      border-top: 1px solid var(--line); border-bottom: 1px solid #eef1ef;
+      background: #f8faf8; cursor: ns-resize; touch-action: none;
+    }
+    .table-resizer::after { content: ""; position: absolute; top: 2px; left: 50%; width: 38px; height: 2px; margin-left: -19px; border-radius: 2px; background: #b7c1bb; }
+    .table-resizer:hover::after, .table-resizer.dragging::after { background: var(--teal); }
+    .results-head { min-height: 49px; flex: 0 0 auto; display: flex; align-items: center; gap: 8px; padding: 7px 14px 7px 18px; border-bottom: 1px solid var(--line); }
+    .results-title { font-size: 13px; font-weight: 700; }
+    #result-count { margin-left: 8px; padding: 3px 7px; color: var(--muted); background: var(--canvas); border-radius: 10px; font-size: 10px; }
+    .results-tools { margin-left: auto; display: flex; align-items: center; gap: 7px; }
+    .table-search, .table-filter {
+      height: 31px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      color: var(--ink-2);
+      background: #fff;
+      font-size: 10.5px;
+      outline: none;
+    }
+    .table-search { width: 178px; padding: 0 10px; }
+    .table-filter { max-width: 140px; padding: 0 24px 0 9px; cursor: pointer; }
+    .table-search:focus, .table-filter:focus { border-color: var(--teal); box-shadow: 0 0 0 2px rgba(8,127,117,.1); }
+    .table-tool-button {
+      height: 31px;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 0 9px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      color: var(--ink-2);
+      background: #fff;
+      font-size: 10px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .table-tool-button:hover { border-color: #9fb3ad; background: var(--surface-2); }
+    .table-tool-button svg { width: 13px; height: 13px; }
+    .table-tool-button:disabled, .table-search:disabled, .table-filter:disabled { opacity: .45; cursor: not-allowed; }
+    .results-context { color: var(--muted); font-size: 10px; }
+    .intelligence-panel.table-expanded .map-stage { flex: 0 0 0; opacity: 0; }
+    .intelligence-panel.table-expanded .results-panel { height: auto; flex: 1 1 auto !important; }
+    #table-wrap { flex: 1; min-height: 0; overflow: auto; }
+    .empty-results {
+      height: 100%; display: grid; place-items: center; color: var(--muted);
+    }
+    .empty-inner { display: flex; align-items: center; gap: 11px; }
+    .empty-icon { width: 34px; height: 34px; display: grid; place-items: center; color: var(--teal); background: #e9f5f2; border-radius: 9px; }
+    .empty-icon svg { width: 17px; height: 17px; }
+    .empty-copy strong { display: block; color: var(--ink-2); font-size: 11px; }
+    .empty-copy span { display: block; margin-top: 2px; font-size: 10px; }
+    table { width: 100%; border-collapse: collapse; font-size: 11px; }
+    th, td { padding: 9px 13px; border-bottom: 1px solid #edf0ee; text-align: left; white-space: nowrap; }
+    th { position: sticky; top: 0; z-index: 2; color: var(--muted); background: #f8faf8; font-size: 9px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+    .sort-button { width: 100%; display: inline-flex; align-items: center; gap: 5px; padding: 0; border: 0; color: inherit; background: transparent; font: inherit; letter-spacing: inherit; text-transform: inherit; cursor: pointer; }
+    .sort-button:hover, .sort-button.active { color: var(--teal); }
+    .sort-indicator { min-width: 8px; font-size: 9px; }
+    tbody tr:hover td { background: #f5f9f7; }
+    td { color: var(--ink-2); }
+    td:first-child { color: var(--ink); font-weight: 600; }
+
+    .about-backdrop {
+      position: fixed; inset: 72px 0 0; z-index: 1500;
+      background: rgba(12,27,40,.38);
+      opacity: 0; pointer-events: none; transition: opacity .22s ease;
+      backdrop-filter: blur(2px);
+    }
+    .about-backdrop.open { opacity: 1; pointer-events: auto; }
+    .about-drawer {
+      position: absolute; top: 0; right: 0; bottom: 0; width: min(480px, 94vw);
+      display: flex; flex-direction: column;
+      background: #fff;
+      box-shadow: var(--shadow-lg);
+      transform: translateX(100%); transition: transform .28s ease;
+    }
+    .about-backdrop.open .about-drawer { transform: none; }
+    .drawer-top { padding: 25px 27px 19px; color: #fff; background: var(--navy); }
+    .drawer-top-row { display: flex; align-items: center; justify-content: space-between; }
+    .drawer-top .eyebrow { color: #ff8c90; }
+    .close-button { border: 0; color: #fff; background: transparent; cursor: pointer; opacity: .8; }
+    .close-button svg { width: 20px; height: 20px; }
+    .drawer-top h2 { margin: 12px 0 7px; font-size: 26px; letter-spacing: -.035em; }
+    .drawer-top p { margin: 0; color: #c0cdd7; font-size: 13px; line-height: 1.55; }
+    .drawer-tabs { display: flex; padding: 0 26px; border-bottom: 1px solid var(--line); }
+    .drawer-tabs button { padding: 14px 0 11px; margin-right: 22px; border: 0; border-bottom: 2px solid transparent; color: var(--muted); background: transparent; font-size: 11px; font-weight: 700; cursor: pointer; }
+    .drawer-tabs button.active { color: var(--red); border-bottom-color: var(--red); }
+    .drawer-content { flex: 1; overflow-y: auto; padding: 22px 27px 34px; }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; animation: enter .18s ease; }
+    .tab-pane h3 { margin: 21px 0 7px; font-size: 14px; }
+    .tab-pane h3:first-child { margin-top: 0; }
+    .tab-pane p { margin: 0 0 11px; color: var(--ink-2); font-size: 12.5px; line-height: 1.65; }
+    .audience-list, .method-list, .source-list, .link-list { display: grid; gap: 8px; }
+    .audience-item, .method-item, .source-item, .link-item { padding: 11px 12px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface-2); }
+    .audience-item strong, .method-item strong, .link-item strong { display: block; font-size: 12px; }
+    .audience-item span, .method-item span, .link-item span { display: block; margin-top: 3px; color: var(--muted); font-size: 11px; line-height: 1.45; }
+    .method-item { position: relative; padding-left: 42px; }
+    .step-num { position: absolute; left: 11px; top: 11px; width: 21px; height: 21px; display: grid; place-items: center; color: #fff; background: var(--teal); border-radius: 50%; font-size: 9px; font-weight: 700; }
+    .source-list { grid-template-columns: 1fr 1fr; }
+    .source-item { color: var(--ink-2); font-size: 11px; }
+    .link-item { text-decoration: none; transition: .15s ease; }
+    .link-item:hover { border-color: #9bb2a9; transform: translateY(-1px); }
+    .notice { margin-top: 16px; padding: 11px 12px; border-left: 3px solid var(--amber); color: var(--ink-2); background: #fff8e9; font-size: 11px; line-height: 1.55; }
+
+    @media (max-width: 950px) {
+      .workspace { grid-template-columns: 360px 1fr; }
+      .status-strip .stat:nth-child(3) { display: none; }
+      .scope-note { display: none; }
+      .table-search { width: 130px; }
+      .results-context { display: none; }
+    }
+    @media (max-width: 760px) {
+      html, body { overflow: auto; }
+      .app-shell { min-height: 100vh; height: auto; }
+      .topbar { position: sticky; top: 0; height: 64px; flex-basis: 64px; padding: 0 14px; }
+      .brand { min-width: 0; }
+      .brand-subtitle, .top-context { display: none; }
+      .language-switch button { min-width: 54px; }
+      .workspace { display: flex; flex-direction: column; }
+      .assistant-panel { height: 600px; border-right: 0; }
+      .intelligence-panel { height: 700px; }
+      .results-panel { height: 230px; flex-basis: 230px; }
+      .results-head { flex-wrap: wrap; padding: 8px 12px; }
+      .results-tools { width: 100%; margin-left: 0; }
+      .table-search { flex: 1; width: auto; }
+      .table-tool-button span { display: none; }
+      .status-strip .stat { min-width: 0; flex: 1; padding: 0 12px; }
+      .about-backdrop { inset: 64px 0 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 18.5V5.5l8-3 8 3v13l-8 3-8-3Z"/><path d="m4 5.5 8 3 8-3M12 8.5v13"/><path d="m7.5 14 2-2 2 1.5 2.7-4 2.3 2.5"/></svg>
+        </div>
+        <div>
+          <div class="brand-title">UNFRC</div>
+          <div class="brand-subtitle" data-i18n="brandSubtitle">Unified Nepal Flood Response Center</div>
+        </div>
+      </div>
+      <div class="top-context">
+        <span class="live-dot"></span>
+        <span data-i18n="operational">Operational intelligence workspace</span>
+      </div>
+      <div class="top-actions">
+        <button class="icon-button" onclick="openAbout()" aria-label="About this prototype" title="About this prototype">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01"/></svg>
+        </button>
+        <div class="language-switch" aria-label="Language">
+          <button id="lang-en" class="active" onclick="setLanguage('en')">English</button>
+          <button id="lang-ne" onclick="setLanguage('ne')">नेपाली</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <aside class="assistant-panel">
+        <div class="panel-heading">
+          <div class="eyebrow" data-i18n="assistantEyebrow">Response assistant</div>
+          <h1 data-i18n="assistantTitle">Where is help needed?</h1>
+          <p data-i18n="assistantIntro">Ask about urgent need, damaged access, or isolated communities in English or Nepali.</p>
+        </div>
+        <div id="chat" aria-live="polite"></div>
+        <div class="prompt-section">
+          <div class="prompt-label" data-i18n="promptLabel">Suggested questions</div>
+          <div id="suggestions"></div>
+        </div>
+        <div class="composer">
+          <div class="composer-box">
+            <input id="question" type="text" data-i18n-placeholder="placeholder" placeholder="Ask about flood-affected areas…" autocomplete="off">
+            <button id="send" class="send-button" onclick="sendQuestion()" aria-label="Send question">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 12 14-7-4 14-3-6-7-1Z"/><path d="m12 13 7-8"/></svg>
+            </button>
+          </div>
+          <div class="composer-note" data-i18n="composerNote">Read-only analysis · Open humanitarian data</div>
+        </div>
+      </aside>
+
+      <section class="intelligence-panel">
+        <div class="status-strip">
+          <div class="stat"><span class="stat-label" data-i18n="systemLabel">System</span><span class="stat-value status" data-i18n="systemValue">Ready</span></div>
+          <div class="stat"><span class="stat-label" data-i18n="coverageLabel">Coverage</span><span class="stat-value" data-i18n="coverageValue">Nuwakot + Rasuwa</span></div>
+          <div class="stat"><span class="stat-label" data-i18n="layersLabel">Evidence layers</span><span class="stat-value" data-i18n="layersValue">Damage · People · Access</span></div>
+          <div class="scope-note">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 2.5 20h19L12 3Z"/><path d="M12 9v5M12 17v.01"/></svg>
+            <span data-i18n="estimate">Prioritization estimates—not an official assessment</span>
+          </div>
+        </div>
+        <div class="map-stage">
+          <div id="map"></div>
+          <div class="map-label"><strong data-i18n="mapTitle">Flood response map</strong><span data-i18n="mapSubtitle">Results appear here after each question</span></div>
+          <div class="poi-control">
+            <div class="poi-control-title"><span data-i18n="poiTitle">Points of interest</span><span id="poi-total">—</span></div>
+            <label class="poi-option"><input type="checkbox" value="health" checked><span class="poi-symbol" style="background:#d8373e"></span><span data-i18n="poiHealth">Health</span></label>
+            <label class="poi-option"><input type="checkbox" value="education" checked><span class="poi-symbol" style="background:#2875b8"></span><span data-i18n="poiEducation">Education</span></label>
+            <label class="poi-option"><input type="checkbox" value="open_space" checked><span class="poi-symbol" style="background:#24855b"></span><span data-i18n="poiOpenSpace">Open spaces</span></label>
+            <label class="poi-option"><input type="checkbox" value="hydropower" checked><span class="poi-symbol" style="background:#7956a8"></span><span data-i18n="poiHydropower">Hydropower</span></label>
+          </div>
+          <div class="legend">
+            <div class="legend-title" data-i18n="legendTitle">Map signal</div>
+            <div class="legend-row"><span class="legend-dot" style="background:#d8373e"></span><span data-i18n="legendHigh">High building damage</span></div>
+            <div class="legend-row"><span class="legend-dot" style="background:#e78324"></span><span data-i18n="legendMedium">Elevated damage</span></div>
+            <div class="legend-row"><span class="legend-dot" style="background:#d9aa31"></span><span data-i18n="legendLower">Lower damage</span></div>
+            <div class="legend-hint" data-i18n="legendHint">Marker size reflects priority score</div>
+          </div>
+        </div>
+        <div class="results-panel">
+          <div id="table-resizer" class="table-resizer" role="separator" aria-orientation="horizontal" aria-label="Resize evidence table" title="Drag to resize · Double-click to reset"></div>
+          <div class="results-head">
+            <span class="results-title" data-i18n="resultsTitle">Evidence table</span>
+            <span id="result-count">0</span>
+            <div class="results-tools">
+              <input id="table-search" class="table-search" type="search" data-i18n-placeholder="filterPlaceholder" placeholder="Search results…" disabled>
+              <select id="district-filter" class="table-filter" aria-label="Filter by district" disabled>
+                <option value="" data-i18n="allDistricts">All districts</option>
+              </select>
+              <select id="isolation-filter" class="table-filter" aria-label="Filter by isolation" disabled>
+                <option value="" data-i18n="allAccess">All access</option>
+                <option value="true" data-i18n="isolatedOnly">Likely isolated</option>
+                <option value="false" data-i18n="connectedOnly">Not isolated</option>
+              </select>
+              <button id="clear-filters" class="table-tool-button" onclick="clearTableFilters()" disabled>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m7 7 10 10M17 7 7 17"/></svg>
+                <span data-i18n="clearFilters">Clear</span>
+              </button>
+              <button id="expand-table" class="table-tool-button" onclick="toggleTableExpanded()" disabled>
+                <svg id="expand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></svg>
+                <span id="expand-label" data-i18n="expandTable">Expand table</span>
+              </button>
+              <span class="results-context" data-i18n="resultsContext">maximum 50 rows</span>
+            </div>
+          </div>
+          <div id="table-wrap"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="about" class="about-backdrop" onclick="closeAbout(event)">
+    <aside class="about-drawer" role="dialog" aria-modal="true" aria-labelledby="about-title">
+      <div class="drawer-top">
+        <div class="drawer-top-row">
+          <div class="eyebrow" data-i18n="aboutEyebrow">Flood response · Prototype</div>
+          <button class="close-button" onclick="closeAbout()" aria-label="Close">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 6 12 12M18 6 6 18"/></svg>
+          </button>
+        </div>
+        <h2 id="about-title" data-i18n="aboutTitle">Open data. Faster decisions.</h2>
+        <p data-i18n="aboutIntro">UNFRC turns scattered flood data into a ranked, mapped picture of where help may be needed most.</p>
+      </div>
+      <div class="drawer-tabs">
+        <button class="active" data-tab="overview" onclick="setTab('overview')" data-i18n="tabOverview">Overview</button>
+        <button data-tab="method" onclick="setTab('method')" data-i18n="tabMethod">Method</button>
+        <button data-tab="sources" onclick="setTab('sources')" data-i18n="tabSources">Sources</button>
+      </div>
+      <div class="drawer-content">
+        <div id="pane-overview" class="tab-pane active">
+          <h3 data-i18n="whyTitle">Why it exists</h3>
+          <p data-i18n="whyCopy">During a flood, damage, population, and access information often sit in separate datasets. UNFRC joins those signals into one triage view and makes it accessible through plain-language questions.</p>
+          <h3 data-i18n="forTitle">Designed for</h3>
+          <div id="audience-list" class="audience-list"></div>
+        </div>
+        <div id="pane-method" class="tab-pane">
+          <h3 data-i18n="methodTitle">From source to response</h3>
+          <div id="method-list" class="method-list"></div>
+          <div class="notice" data-i18n="methodNotice">This prototype supports prioritization. Always confirm findings against official and current field sources before acting.</div>
+        </div>
+        <div id="pane-sources" class="tab-pane">
+          <h3 data-i18n="sourceTitle">Open evidence layers</h3>
+          <p data-i18n="sourceCopy">No proprietary or personal data is used in this prototype.</p>
+          <div id="source-list" class="source-list"></div>
+          <h3 data-i18n="officialTitle">Official resources</h3>
+          <div id="link-list" class="link-list"></div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const ICONS = {
+      bot: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 4h8a4 4 0 0 1 4 4v7a4 4 0 0 1-4 4H9l-5 2v-5a4 4 0 0 1-1-2.7V8a4 4 0 0 1 4-4h1Z"/><path d="M8 10h.01M12 10h.01M16 10h.01"/></svg>',
+      arrow: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h13M13 6l6 6-6 6"/></svg>',
+      table: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M9 10v9"/></svg>'
+    };
+
+    const COPY = {
+      en: {
+        brandSubtitle: "Unified Nepal Flood Response Center",
+        operational: "Operational intelligence workspace",
+        assistantEyebrow: "Response assistant",
+        assistantTitle: "Where is help needed?",
+        assistantIntro: "Ask about urgent need, damaged access, or isolated communities in English or Nepali.",
+        promptLabel: "Suggested questions",
+        placeholder: "Ask about flood-affected areas…",
+        composerNote: "Read-only analysis · Open humanitarian data",
+        systemLabel: "System", systemValue: "Ready",
+        coverageLabel: "Coverage", coverageValue: "Nuwakot + Rasuwa",
+        layersLabel: "Evidence layers", layersValue: "Damage · People · Access",
+        estimate: "Prioritization estimates—not an official assessment",
+        mapTitle: "Flood response map", mapSubtitle: "Results appear here after each question",
+        poiTitle: "Points of interest", poiHealth: "Health", poiEducation: "Education",
+        poiOpenSpace: "Open spaces", poiHydropower: "Hydropower",
+        legendTitle: "Map signal", legendHigh: "High building damage", legendMedium: "Elevated damage", legendLower: "Lower damage", legendHint: "Marker size reflects priority score",
+        resultsTitle: "Evidence table", resultsContext: "maximum 50 rows",
+        filterPlaceholder: "Search results…", allDistricts: "All districts",
+        allAccess: "All access", isolatedOnly: "Likely isolated", connectedOnly: "Not isolated",
+        clearFilters: "Clear", expandTable: "Expand table", restoreMap: "Restore map",
+        emptyTitle: "No active result set", emptyCopy: "Ask a question to populate the map and table.",
+        welcome: "Namaste. I can help identify high-priority areas, communities near damaged bridges, and locations with limited access. What would you like to understand?",
+        thinking: "Analyzing governed flood data",
+        error: "I couldn't complete that analysis. Please try a more specific flood-response question.",
+        prompts: ["Which areas need help most urgently?", "Which villages may be cut off by damaged bridges?", "Which isolated areas are farthest from a helipad?", "Where is building damage the most severe?", "Which municipalities have the most people in damaged areas?", "Which bridges are washed out, and in which districts?", "Which high-need areas are farthest from any helipad?", "How many buildings are damaged in Rasuwa district?"],
+        aboutEyebrow: "Flood response · Prototype", aboutTitle: "Open data. Faster decisions.",
+        aboutIntro: "UNFRC turns scattered flood data into a ranked, mapped picture of where help may be needed most.",
+        tabOverview: "Overview", tabMethod: "Method", tabSources: "Sources",
+        whyTitle: "Why it exists",
+        whyCopy: "During a flood, damage, population, and access information often sit in separate datasets. UNFRC joins those signals into one triage view and makes it accessible through plain-language questions.",
+        forTitle: "Designed for",
+        audience: [["Response coordinators", "Prioritize where limited resources may have the greatest impact."], ["Field teams", "See mapped communities, access constraints, and nearby infrastructure."], ["Government and NGOs", "Work from a shared, governed view of the same open evidence."]],
+        methodTitle: "From source to response",
+        method: [["Ingest", "Load dated snapshots of open damage, population, and infrastructure data."], ["Standardize", "Decode geospatial formats and align every source to common coordinates."], ["Fuse and rank", "Combine need and isolation signals on an approximately 1 km grid."], ["Ask and map", "Turn a plain-language question into a safe read-only query and mapped answer."]],
+        methodNotice: "This prototype supports prioritization. Always confirm findings against official and current field sources before acting.",
+        sourceTitle: "Open evidence layers", sourceCopy: "No proprietary or personal data is used in this prototype.",
+        sources: ["Building damage footprints", "Population estimates", "Damaged bridges", "Road network", "Helipads", "Settlements"],
+        officialTitle: "Official resources",
+        links: [["Nepal BIPAD Portal", "National disaster information", "https://bipadportal.gov.np/"], ["Humanitarian Data Exchange", "Open datasets for Nepal", "https://data.humdata.org/group/npl"], ["ReliefWeb Nepal", "Situation reports and updates", "https://reliefweb.int/country/npl"]]
+      },
+      ne: {
+        brandSubtitle: "एकीकृत नेपाल बाढी प्रतिकार्य केन्द्र",
+        operational: "सञ्चालनात्मक सूचना कार्यक्षेत्र",
+        assistantEyebrow: "प्रतिकार्य सहायक",
+        assistantTitle: "कहाँ सहयोग चाहिन्छ?",
+        assistantIntro: "तत्काल आवश्यकता, क्षतिग्रस्त पहुँच वा एकान्त समुदायबारे नेपाली वा अंग्रेजीमा सोध्नुहोस्।",
+        promptLabel: "सुझाव गरिएका प्रश्नहरू",
+        placeholder: "बाढी प्रभावित क्षेत्रबारे सोध्नुहोस्…",
+        composerNote: "पढ्ने-मात्र विश्लेषण · खुला मानवीय डेटा",
+        systemLabel: "प्रणाली", systemValue: "तयार",
+        coverageLabel: "समेटिएको क्षेत्र", coverageValue: "नुवाकोट + रसुवा",
+        layersLabel: "प्रमाण तहहरू", layersValue: "क्षति · जनसंख्या · पहुँच",
+        estimate: "प्राथमिकता अनुमान—आधिकारिक मूल्याङ्कन होइन",
+        mapTitle: "बाढी प्रतिकार्य नक्सा", mapSubtitle: "प्रत्येक प्रश्नपछि नतिजा यहाँ देखिन्छ",
+        poiTitle: "महत्त्वपूर्ण स्थान", poiHealth: "स्वास्थ्य", poiEducation: "शिक्षा",
+        poiOpenSpace: "खुला स्थान", poiHydropower: "जलविद्युत्",
+        legendTitle: "नक्सा सङ्केत", legendHigh: "धेरै भवन क्षति", legendMedium: "बढ्दो क्षति", legendLower: "कम क्षति", legendHint: "मार्करको आकारले प्राथमिकता देखाउँछ",
+        resultsTitle: "प्रमाण तालिका", resultsContext: "अधिकतम ५० पङ्क्ति",
+        filterPlaceholder: "नतिजा खोज्नुहोस्…", allDistricts: "सबै जिल्ला",
+        allAccess: "सबै पहुँच", isolatedOnly: "सम्भवतः एकान्त", connectedOnly: "एकान्त होइन",
+        clearFilters: "हटाउनुहोस्", expandTable: "तालिका ठूलो बनाउनुहोस्", restoreMap: "नक्सा फर्काउनुहोस्",
+        emptyTitle: "हाल कुनै नतिजा छैन", emptyCopy: "नक्सा र तालिका भर्न प्रश्न सोध्नुहोस्।",
+        welcome: "नमस्ते। म उच्च प्राथमिकताका क्षेत्र, क्षतिग्रस्त पुल नजिकका समुदाय र सीमित पहुँच भएका स्थान पहिचान गर्न मद्दत गर्छु। तपाईं के बुझ्न चाहनुहुन्छ?",
+        thinking: "शासित बाढी डेटा विश्लेषण हुँदैछ",
+        error: "विश्लेषण पूरा गर्न सकिनँ। कृपया अझ स्पष्ट बाढी प्रतिकार्य प्रश्न सोध्नुहोस्।",
+        prompts: ["कुन क्षेत्रलाई सबैभन्दा तत्काल सहयोग चाहिन्छ?", "कुन गाउँ क्षतिग्रस्त पुलका कारण काटिएका हुन सक्छन्?", "कुन एकान्त क्षेत्र हेलिप्याडबाट सबैभन्दा टाढा छन्?", "भवन क्षति सबैभन्दा गम्भीर कहाँ छ?", "कुन नगरपालिकामा क्षतिग्रस्त क्षेत्रमा सबैभन्दा बढी मानिस छन्?", "कुन पुलहरू बगेका छन्, र कुन जिल्लामा?", "उच्च आवश्यकता भएका कुन क्षेत्र हेलिप्याडबाट सबैभन्दा टाढा छन्?", "रसुवा जिल्लामा कति भवन क्षतिग्रस्त छन्?"],
+        aboutEyebrow: "बाढी प्रतिकार्य · प्रोटोटाइप", aboutTitle: "खुला डेटा। छिटो निर्णय।",
+        aboutIntro: "UNFRC ले छरिएको बाढी डेटालाई कहाँ सबैभन्दा बढी सहयोग चाहिन सक्छ भन्ने क्रमबद्ध, नक्सामा देखिने चित्रमा बदल्छ।",
+        tabOverview: "परिचय", tabMethod: "विधि", tabSources: "स्रोत",
+        whyTitle: "यो किन बनाइएको हो",
+        whyCopy: "बाढीको समयमा क्षति, जनसंख्या र पहुँचका सूचना प्रायः अलग डेटासेटमा हुन्छन्। UNFRC ले ती सङ्केतलाई एउटै प्राथमिकता दृश्यमा जोड्छ र सरल भाषाका प्रश्नबाट उपलब्ध गराउँछ।",
+        forTitle: "कसका लागि",
+        audience: [["प्रतिकार्य संयोजक", "सीमित स्रोतले कहाँ सबैभन्दा ठूलो प्रभाव पार्न सक्छ भनी प्राथमिकता दिन।"], ["फिल्ड टोली", "नक्सामा समुदाय, पहुँच अवरोध र नजिकको पूर्वाधार हेर्न।"], ["सरकार र गैरसरकारी संस्था", "एउटै खुला प्रमाणको साझा, शासित दृश्यबाट काम गर्न।"]],
+        methodTitle: "स्रोतदेखि प्रतिकार्यसम्म",
+        method: [["सङ्कलन", "खुला क्षति, जनसंख्या र पूर्वाधार डेटाका मिति सहितका स्न्यापशट लोड गरिन्छ।"], ["मानकीकरण", "भौगोलिक ढाँचा डिकोड गरी सबै स्रोतलाई साझा निर्देशांकमा मिलाइन्छ।"], ["जोड्ने र क्रमबद्ध", "करिब १ किमी ग्रिडमा आवश्यकता र एकान्त सङ्केत जोडिन्छ।"], ["सोध्ने र नक्सा", "सरल भाषाको प्रश्नलाई सुरक्षित पढ्ने-मात्र क्वेरी र नक्साको जवाफमा बदलिन्छ।"]],
+        methodNotice: "यो प्रोटोटाइपले प्राथमिकतामा सहयोग गर्छ। कार्य गर्नुअघि आधिकारिक र हालको फिल्ड स्रोतसँग सधैं पुष्टि गर्नुहोस्।",
+        sourceTitle: "खुला प्रमाण तहहरू", sourceCopy: "यस प्रोटोटाइपमा स्वामित्व वा व्यक्तिगत डेटा प्रयोग गरिएको छैन।",
+        sources: ["भवन क्षति", "जनसंख्या अनुमान", "क्षतिग्रस्त पुल", "सडक सञ्जाल", "हेलिप्याड", "बस्ती"],
+        officialTitle: "आधिकारिक स्रोतहरू",
+        links: [["नेपाल BIPAD पोर्टल", "राष्ट्रिय विपद् सूचना", "https://bipadportal.gov.np/"], ["Humanitarian Data Exchange", "नेपालका खुला डेटासेट", "https://data.humdata.org/group/npl"], ["ReliefWeb नेपाल", "स्थिति प्रतिवेदन र अद्यावधिक", "https://reliefweb.int/country/npl"]]
+      }
+    };
+
+    let language = "en";
+    let map;
+    let markerLayer;
+    let poiLayer;
+    let busy = false;
+    let currentColumns = [];
+    let currentRows = [];
+    let tableExpanded = false;
+    let sortColumn = null;
+    let sortDirection = "asc";
+    let poiRows = [];
+
+    function text(key) { return COPY[language][key]; }
+
+    function setLanguage(next) {
+      language = next;
+      document.documentElement.lang = next;
+      document.getElementById("lang-en").classList.toggle("active", next === "en");
+      document.getElementById("lang-ne").classList.toggle("active", next === "ne");
+      document.querySelectorAll("[data-i18n]").forEach(el => {
+        const value = COPY[next][el.dataset.i18n];
+        if (value !== undefined) el.textContent = value;
+      });
+      document.querySelectorAll("[data-i18n-placeholder]").forEach(el => {
+        el.placeholder = COPY[next][el.dataset.i18nPlaceholder];
+      });
+      renderSuggestions();
+      renderAbout();
+      renderEmptyResults();
+      if (currentRows.length) configureTableFilters();
+      updateExpandButton();
+      if (poiRows.length) renderPointsOfInterest();
+    }
+
+    function addMessage(content, role, sql, sqlSource) {
+      const row = document.createElement("div");
+      row.className = `message ${role}`;
+      if (role === "bot") {
+        const avatar = document.createElement("div");
+        avatar.className = "avatar";
+        avatar.innerHTML = ICONS.bot;
+        row.appendChild(avatar);
+      }
+      const bubble = document.createElement("div");
+      bubble.className = "bubble";
+      bubble.textContent = content;
+      if (sql) {
+        const details = document.createElement("details");
+        details.className = "query-details";
+        const summary = document.createElement("summary");
+        const cached = sqlSource === "suggested" || sqlSource === "runtime";
+        summary.textContent = language === "ne"
+          ? (cached ? "क्यास गरिएको क्वेरी हेर्नुहोस्" : "प्रयोग गरिएको क्वेरी हेर्नुहोस्")
+          : (cached ? "View cached query" : "View generated query");
+        const pre = document.createElement("pre");
+        pre.textContent = sql;
+        details.append(summary, pre);
+        bubble.appendChild(details);
+      }
+      row.appendChild(bubble);
+      const chat = document.getElementById("chat");
+      chat.appendChild(row);
+      chat.scrollTop = chat.scrollHeight;
+      return row;
+    }
+
+    function addLoadingMessage() {
+      const row = document.createElement("div");
+      row.className = "message bot";
+      const avatar = document.createElement("div");
+      avatar.className = "avatar";
+      avatar.innerHTML = ICONS.bot;
+      const bubble = document.createElement("div");
+      bubble.className = "bubble";
+      const label = document.createTextNode(text("thinking") + " ");
+      const dots = document.createElement("span");
+      dots.className = "thinking";
+      dots.innerHTML = "<i></i><i></i><i></i>";
+      bubble.append(label, dots);
+      row.append(avatar, bubble);
+      document.getElementById("chat").appendChild(row);
+      return row;
+    }
+
+    function renderSuggestions() {
+      const container = document.getElementById("suggestions");
+      container.replaceChildren();
+      text("prompts").forEach(promptText => {
+        const button = document.createElement("button");
+        button.className = "prompt";
+        button.innerHTML = ICONS.arrow;
+        const span = document.createElement("span");
+        span.textContent = promptText;
+        button.appendChild(span);
+        button.onclick = () => {
+          document.getElementById("question").value = promptText;
+          sendQuestion();
+        };
+        container.appendChild(button);
+      });
+    }
+
+    function renderEmptyResults() {
+      const wrap = document.getElementById("table-wrap");
+      if (wrap.querySelector("table")) return;
+      wrap.innerHTML = `<div class="empty-results"><div class="empty-inner"><div class="empty-icon">${ICONS.table}</div><div class="empty-copy"><strong></strong><span></span></div></div></div>`;
+      wrap.querySelector("strong").textContent = text("emptyTitle");
+      wrap.querySelector(".empty-copy span").textContent = text("emptyCopy");
+      document.getElementById("result-count").textContent = "0";
+    }
+
+    function humanize(name) {
+      return name.replace(/_/g, " ").replace(/\b\w/g, char => char.toUpperCase());
+    }
+
+    function formatValue(value, column) {
+      if (value === null || value === undefined) return "—";
+      if (typeof value === "boolean") return value ? "Yes" : "No";
+      const numeric = Number(value);
+      if (value !== "" && Number.isFinite(numeric)) {
+        if (column.includes("lat") || column.includes("lon") || column.includes("pct") || column.includes("km")) return numeric.toLocaleString(undefined, { maximumFractionDigits: 2 });
+        return numeric.toLocaleString(undefined, { maximumFractionDigits: 0 });
+      }
+      return String(value);
+    }
+
+    function renderTable(columns, rows) {
+      currentColumns = columns || [];
+      currentRows = rows || [];
+      sortColumn = null;
+      sortDirection = "asc";
+      document.getElementById("table-search").value = "";
+      document.getElementById("district-filter").value = "";
+      document.getElementById("isolation-filter").value = "";
+      configureTableFilters();
+      applyTableFilters();
+    }
+
+    function configureTableFilters() {
+      const hasRows = currentRows.length > 0;
+      const district = document.getElementById("district-filter");
+      const isolation = document.getElementById("isolation-filter");
+      const search = document.getElementById("table-search");
+      const clear = document.getElementById("clear-filters");
+      const expand = document.getElementById("expand-table");
+      const selectedDistrict = district.value;
+      const districtColumn = currentColumns.includes("district") ? "district"
+        : currentColumns.includes("adm2_name") ? "adm2_name" : null;
+      district.replaceChildren();
+      const all = document.createElement("option");
+      all.value = "";
+      all.textContent = text("allDistricts");
+      district.appendChild(all);
+      if (districtColumn) {
+        [...new Set(currentRows.map(row => row[districtColumn]).filter(Boolean).map(String))]
+          .sort((a, b) => a.localeCompare(b))
+          .forEach(value => {
+            const option = document.createElement("option");
+            option.value = value;
+            option.textContent = value;
+            district.appendChild(option);
+          });
+      }
+      district.value = [...district.options].some(option => option.value === selectedDistrict) ? selectedDistrict : "";
+      search.disabled = !hasRows;
+      district.disabled = !hasRows || !districtColumn;
+      isolation.disabled = !hasRows || !currentColumns.includes("likely_isolated");
+      clear.disabled = !hasRows;
+      expand.disabled = !hasRows;
+      if (isolation.disabled) isolation.value = "";
+    }
+
+    function applyTableFilters() {
+      const query = document.getElementById("table-search").value.trim().toLocaleLowerCase();
+      const districtValue = document.getElementById("district-filter").value;
+      const isolationValue = document.getElementById("isolation-filter").value;
+      const districtColumn = currentColumns.includes("district") ? "district"
+        : currentColumns.includes("adm2_name") ? "adm2_name" : null;
+      const filtered = currentRows.filter(row => {
+        const matchesSearch = !query || currentColumns.some(column =>
+          String(row[column] ?? "").toLocaleLowerCase().includes(query)
+        );
+        const matchesDistrict = !districtValue || String(row[districtColumn] ?? "") === districtValue;
+        const isolated = row.likely_isolated === true || String(row.likely_isolated).toLowerCase() === "true";
+        const matchesIsolation = !isolationValue || String(isolated) === isolationValue;
+        return matchesSearch && matchesDistrict && matchesIsolation;
+      });
+      if (sortColumn) {
+        filtered.sort((left, right) => compareValues(left[sortColumn], right[sortColumn]) * (sortDirection === "asc" ? 1 : -1));
+      }
+      renderFilteredTable(currentColumns, filtered);
+      renderMap(mapRowsFromTableRows(filtered));
+    }
+
+    function compareValues(left, right) {
+      if (left === null || left === undefined || left === "") return 1;
+      if (right === null || right === undefined || right === "") return -1;
+      const leftNumber = Number(left);
+      const rightNumber = Number(right);
+      if (Number.isFinite(leftNumber) && Number.isFinite(rightNumber)) return leftNumber - rightNumber;
+      return String(left).localeCompare(String(right), undefined, { numeric: true, sensitivity: "base" });
+    }
+
+    function toggleSort(column) {
+      if (sortColumn === column) {
+        sortDirection = sortDirection === "asc" ? "desc" : "asc";
+      } else {
+        sortColumn = column;
+        sortDirection = "asc";
+      }
+      applyTableFilters();
+    }
+
+    function renderFilteredTable(columns, rows) {
+      const wrap = document.getElementById("table-wrap");
+      wrap.replaceChildren();
+      document.getElementById("result-count").textContent =
+        rows.length === currentRows.length ? String(rows.length) : `${rows.length} / ${currentRows.length}`;
+      if (!rows || !rows.length) {
+        renderEmptyResults();
+        document.getElementById("result-count").textContent =
+          currentRows.length ? `0 / ${currentRows.length}` : "0";
+        return;
+      }
+      const table = document.createElement("table");
+      const thead = document.createElement("thead");
+      const headerRow = document.createElement("tr");
+      columns.forEach(column => {
+        const th = document.createElement("th");
+        const button = document.createElement("button");
+        button.className = `sort-button${sortColumn === column ? " active" : ""}`;
+        button.type = "button";
+        button.onclick = () => toggleSort(column);
+        const label = document.createElement("span");
+        label.textContent = humanize(column);
+        const indicator = document.createElement("span");
+        indicator.className = "sort-indicator";
+        indicator.textContent = sortColumn === column ? (sortDirection === "asc" ? "↑" : "↓") : "↕";
+        button.append(label, indicator);
+        th.appendChild(button);
+        headerRow.appendChild(th);
+      });
+      thead.appendChild(headerRow);
+      const tbody = document.createElement("tbody");
+      rows.forEach(row => {
+        const tr = document.createElement("tr");
+        columns.forEach(column => {
+          const td = document.createElement("td");
+          td.textContent = formatValue(row[column], column);
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+      table.append(thead, tbody);
+      wrap.appendChild(table);
+    }
+
+    function mapRowsFromTableRows(rows) {
+      return rows.flatMap(row => {
+        const lat = row.lat_k ?? row.lat;
+        const lon = row.lon_k ?? row.lon;
+        if (lat === null || lat === undefined || lon === null || lon === undefined) return [];
+        return [{
+          lat: Number(lat),
+          lon: Number(lon),
+          label: row.place_name || row.name || row.municipality || row.district || "",
+          priority: row.priority_score,
+          damaged: row.damaged_bld,
+          status: row.status
+        }];
+      }).filter(row => Number.isFinite(row.lat) && Number.isFinite(row.lon));
+    }
+
+    function clearTableFilters() {
+      document.getElementById("table-search").value = "";
+      document.getElementById("district-filter").value = "";
+      document.getElementById("isolation-filter").value = "";
+      applyTableFilters();
+    }
+
+    function toggleTableExpanded() {
+      tableExpanded = !tableExpanded;
+      document.querySelector(".intelligence-panel").classList.toggle("table-expanded", tableExpanded);
+      updateExpandButton();
+      window.setTimeout(() => map.invalidateSize(), 240);
+    }
+
+    function updateExpandButton() {
+      const label = document.getElementById("expand-label");
+      if (label) label.textContent = text(tableExpanded ? "restoreMap" : "expandTable");
+    }
+
+    const POI_COLORS = {
+      health: "#d8373e",
+      education: "#2875b8",
+      open_space: "#24855b",
+      hydropower: "#7956a8"
+    };
+
+    async function loadPointsOfInterest() {
+      try {
+        const response = await fetch("/api/pois");
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        poiRows = data.rows || [];
+        renderPointsOfInterest();
+      } catch (error) {
+        document.getElementById("poi-total").textContent = "0";
+        console.error("Unable to load points of interest", error);
+      }
+    }
+
+    function renderPointsOfInterest() {
+      poiLayer.clearLayers();
+      const enabled = new Set(
+        [...document.querySelectorAll(".poi-option input:checked")].map(input => input.value)
+      );
+      const visible = poiRows.filter(row => enabled.has(row.category));
+      visible.forEach(item => {
+        const marker = L.circleMarker([item.lat, item.lon], {
+          radius: 5,
+          color: "#fff",
+          weight: 1.5,
+          fillColor: POI_COLORS[item.category] || "#6e7a86",
+          fillOpacity: .95
+        });
+        const popup = document.createElement("div");
+        popup.style.minWidth = "150px";
+        const title = document.createElement("strong");
+        title.textContent = item.name || "Point of interest";
+        popup.appendChild(title);
+        [
+          [language === "ne" ? "प्रकार" : "Type", item.subtype],
+          [language === "ne" ? "स्थिति" : "Status", item.status],
+          [language === "ne" ? "जिल्ला" : "District", item.district],
+          [language === "ne" ? "पालिका" : "Municipality", item.municipality]
+        ].forEach(([label, value]) => {
+          if (!value) return;
+          const line = document.createElement("div");
+          line.style.cssText = "margin-top:4px;color:#596673;font-size:11px";
+          line.textContent = `${label}: ${value}`;
+          popup.appendChild(line);
+        });
+        marker.bindPopup(popup).addTo(poiLayer);
+      });
+      document.getElementById("poi-total").textContent = String(visible.length);
+    }
+
+    function initTableResizer() {
+      const handle = document.getElementById("table-resizer");
+      const results = document.querySelector(".results-panel");
+      const panel = document.querySelector(".intelligence-panel");
+      let startY = 0;
+      let startHeight = 238;
+
+      handle.addEventListener("pointerdown", event => {
+        if (tableExpanded) return;
+        startY = event.clientY;
+        startHeight = results.getBoundingClientRect().height;
+        handle.classList.add("dragging");
+        handle.setPointerCapture(event.pointerId);
+      });
+      handle.addEventListener("pointermove", event => {
+        if (!handle.hasPointerCapture(event.pointerId)) return;
+        const maxHeight = Math.max(238, panel.clientHeight - 150);
+        const nextHeight = Math.max(170, Math.min(maxHeight, startHeight + startY - event.clientY));
+        results.style.flexBasis = `${nextHeight}px`;
+        results.style.height = `${nextHeight}px`;
+      });
+      const finish = event => {
+        if (!handle.hasPointerCapture(event.pointerId)) return;
+        handle.releasePointerCapture(event.pointerId);
+        handle.classList.remove("dragging");
+        map.invalidateSize();
+      };
+      handle.addEventListener("pointerup", finish);
+      handle.addEventListener("pointercancel", finish);
+      handle.addEventListener("dblclick", () => {
+        results.style.flexBasis = "238px";
+        results.style.height = "238px";
+        window.setTimeout(() => map.invalidateSize(), 50);
+      });
+    }
+
+    function renderMap(rows) {
+      markerLayer.clearLayers();
+      if (!rows || !rows.length) {
+        map.setView([28.05, 85.25], 9);
+        return;
+      }
+      const points = [];
+      rows.forEach(item => {
+        const priority = Number(item.priority) || 0;
+        const damaged = Number(item.damaged) || 0;
+        const radius = Math.max(6, Math.min(25, Math.sqrt(priority) / 60));
+        const color = item.status ? "#d99218" : damaged > 200 ? "#d8373e" : damaged > 50 ? "#e78324" : "#d9aa31";
+        const marker = L.circleMarker([item.lat, item.lon], {
+          radius, color: "#fff", weight: 1.5, fillColor: color, fillOpacity: .82
+        });
+        const popup = document.createElement("div");
+        popup.style.minWidth = "150px";
+        const title = document.createElement("strong");
+        title.textContent = item.label || (language === "ne" ? "प्रभावित क्षेत्र" : "Affected area");
+        popup.appendChild(title);
+        [
+          [language === "ne" ? "क्षतिग्रस्त भवन" : "Damaged buildings", item.damaged],
+          [language === "ne" ? "स्थिति" : "Status", item.status],
+          [language === "ne" ? "प्राथमिकता" : "Priority", item.priority == null ? null : Math.round(item.priority)]
+        ].forEach(([label, value]) => {
+          if (value === null || value === undefined || value === "") return;
+          const line = document.createElement("div");
+          line.style.cssText = "margin-top:4px;color:#596673;font-size:11px";
+          line.textContent = `${label}: ${value}`;
+          popup.appendChild(line);
+        });
+        marker.bindPopup(popup);
+        marker.addTo(markerLayer);
+        points.push([item.lat, item.lon]);
+      });
+      if (points.length) map.fitBounds(points, { padding: [45, 45], maxZoom: 12 });
+    }
+
+    async function sendQuestion() {
+      if (busy) return;
+      const input = document.getElementById("question");
+      const question = input.value.trim();
+      if (!question) return;
+      busy = true;
+      document.getElementById("send").disabled = true;
+      addMessage(question, "user");
+      input.value = "";
+      const loading = addLoadingMessage();
+      try {
+        const response = await fetch("/api/ask", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ question, lang: language })
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        loading.remove();
+        addMessage(data.answer || text("error"), "bot", data.sql, data.sql_source);
+        renderTable(data.columns || [], data.rows || []);
+      } catch (error) {
+        loading.remove();
+        addMessage(text("error"), "bot");
+        console.error(error);
+      } finally {
+        busy = false;
+        document.getElementById("send").disabled = false;
+        input.focus({ preventScroll: true });
+      }
+    }
+
+    function renderAbout() {
+      const audience = document.getElementById("audience-list");
+      audience.replaceChildren();
+      text("audience").forEach(([title, copy]) => {
+        const item = document.createElement("div");
+        item.className = "audience-item";
+        const strong = document.createElement("strong");
+        strong.textContent = title;
+        const span = document.createElement("span");
+        span.textContent = copy;
+        item.append(strong, span);
+        audience.appendChild(item);
+      });
+      const method = document.getElementById("method-list");
+      method.replaceChildren();
+      text("method").forEach(([title, copy], index) => {
+        const item = document.createElement("div");
+        item.className = "method-item";
+        const number = document.createElement("span");
+        number.className = "step-num";
+        number.textContent = index + 1;
+        const strong = document.createElement("strong");
+        strong.textContent = title;
+        const span = document.createElement("span");
+        span.textContent = copy;
+        item.append(number, strong, span);
+        method.appendChild(item);
+      });
+      const sourceList = document.getElementById("source-list");
+      sourceList.replaceChildren();
+      text("sources").forEach(source => {
+        const item = document.createElement("div");
+        item.className = "source-item";
+        item.textContent = source;
+        sourceList.appendChild(item);
+      });
+      const linkList = document.getElementById("link-list");
+      linkList.replaceChildren();
+      text("links").forEach(([title, copy, url]) => {
+        const link = document.createElement("a");
+        link.className = "link-item";
+        link.href = url;
+        link.target = "_blank";
+        link.rel = "noopener";
+        const strong = document.createElement("strong");
+        strong.textContent = title + " ↗";
+        const span = document.createElement("span");
+        span.textContent = copy;
+        link.append(strong, span);
+        linkList.appendChild(link);
+      });
+    }
+
+    function openAbout() { document.getElementById("about").classList.add("open"); }
+    function closeAbout(event) {
+      if (event && event.target !== event.currentTarget) return;
+      document.getElementById("about").classList.remove("open");
+    }
+    function setTab(tab) {
+      document.querySelectorAll(".drawer-tabs button").forEach(button => button.classList.toggle("active", button.dataset.tab === tab));
+      document.querySelectorAll(".tab-pane").forEach(pane => pane.classList.toggle("active", pane.id === `pane-${tab}`));
+    }
+
+    document.getElementById("question").addEventListener("keydown", event => {
+      if (event.key === "Enter") sendQuestion();
+    });
+    document.getElementById("table-search").addEventListener("input", applyTableFilters);
+    document.getElementById("district-filter").addEventListener("change", applyTableFilters);
+    document.getElementById("isolation-filter").addEventListener("change", applyTableFilters);
+    document.querySelectorAll(".poi-option input").forEach(input =>
+      input.addEventListener("change", renderPointsOfInterest)
+    );
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape") {
+        closeAbout();
+        if (tableExpanded) toggleTableExpanded();
+      }
+    });
+
+    window.addEventListener("load", () => {
+      map = L.map("map", { zoomControl: false }).setView([28.05, 85.25], 9);
+      L.control.zoom({ position: "bottomleft" }).addTo(map);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "© OpenStreetMap contributors",
+        maxZoom: 17
+      }).addTo(map);
+      markerLayer = L.layerGroup().addTo(map);
+      poiLayer = L.layerGroup().addTo(map);
+      initTableResizer();
+      setLanguage("en");
+      addMessage(text("welcome"), "bot");
+      loadPointsOfInterest();
+    });
+  </script>
+</body>
+</html>
