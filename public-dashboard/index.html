@@ -168,10 +168,10 @@
         <h2 data-i18n="sourcesTitle">Built from open humanitarian evidence</h2>
       </div>
       <div class="source-list">
-        <span>Overture + Microsoft AI for Good <small data-i18n="buildingDamage">Building damage</small></span>
-        <span>IHME <small data-i18n="populationGrid">Population grid</small></span>
-        <span>HOT / OpenStreetMap <small data-i18n="accessInfra">Access & infrastructure</small></span>
-        <span>HDX <small data-i18n="operationalLayers">Operational layers</small></span>
+        <button type="button" class="source-chip" data-source="damage">Overture + Microsoft AI for Good <small data-i18n="buildingDamage">Building damage</small></button>
+        <button type="button" class="source-chip" data-source="population">IHME <small data-i18n="populationGrid">Population grid</small></button>
+        <button type="button" class="source-chip" data-source="access">HOT / OpenStreetMap <small data-i18n="accessInfra">Access & infrastructure</small></button>
+        <button type="button" class="source-chip" data-source="hdx">HDX <small data-i18n="operationalLayers">Operational layers</small></button>
       </div>
     </section>
   </main>
@@ -188,7 +188,10 @@
     <div class="formula"><code>acute need = damaged buildings × population</code></div>
     <div class="formula"><code>priority = acute need × (1 + 0.5 × damaged bridges within 5 km)</code></div>
     <p data-i18n="methodCopy">Buildings are grouped into approximately 1 km cells and joined to a population grid. Nearby damaged bridges increase the priority score as an access constraint. Helipad distance is shown as context but does not change the score.</p>
-    <p data-i18n="methodCaution">These are relative triage indicators, not counts of casualties, displaced people or verified unmet need.</p>
+    <p data-i18n="methodCaution">These are relative triage indicators, not counts of casualties, displaced people or verified unmet need. Each input is itself an estimate; multiplying them compounds uncertainty.</p>
+    <h3 data-i18n="sourceQualityTitle">Where the inputs come from</h3>
+    <p class="source-quality-lead" data-i18n="sourceQualityLead">The rank is only as strong as the four open layers below. None is an official government assessment.</p>
+    <div id="source-quality-list" class="source-quality-list"></div>
   </dialog>
 
   <div id="loading" class="loading-screen"><span></span><p>Loading lakehouse snapshot…</p></div>

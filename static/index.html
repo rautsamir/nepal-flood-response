@@ -404,11 +404,11 @@
     .tab-pane p { margin: 0 0 11px; color: var(--ink-2); font-size: 12.5px; line-height: 1.65; }
     .audience-list, .method-list, .source-list, .link-list { display: grid; gap: 8px; }
     .audience-item, .method-item, .source-item, .link-item { padding: 11px 12px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface-2); }
-    .audience-item strong, .method-item strong, .link-item strong { display: block; font-size: 12px; }
-    .audience-item span, .method-item span, .link-item span { display: block; margin-top: 3px; color: var(--muted); font-size: 11px; line-height: 1.45; }
+    .audience-item strong, .method-item strong, .link-item strong, .source-item strong { display: block; font-size: 12px; }
+    .audience-item span, .method-item span, .link-item span, .source-item span { display: block; margin-top: 3px; color: var(--muted); font-size: 11px; line-height: 1.45; }
     .method-item { position: relative; padding-left: 42px; }
     .step-num { position: absolute; left: 11px; top: 11px; width: 21px; height: 21px; display: grid; place-items: center; color: #fff; background: var(--teal); border-radius: 50%; font-size: 9px; font-weight: 700; }
-    .source-list { grid-template-columns: 1fr 1fr; }
+    .source-list { grid-template-columns: 1fr; }
     .source-item { color: var(--ink-2); font-size: 11px; }
     .link-item { text-decoration: none; transition: .15s ease; }
     .link-item:hover { border-color: #9bb2a9; transform: translateY(-1px); }
@@ -636,8 +636,14 @@
         methodTitle: "From source to response",
         method: [["Ingest", "Load dated snapshots of open damage, population, and infrastructure data."], ["Standardize", "Decode geospatial formats and align every source to common coordinates."], ["Fuse and rank", "Combine need and isolation signals on an approximately 1 km grid."], ["Ask and map", "Turn a plain-language question into a safe read-only query and mapped answer."]],
         methodNotice: "This prototype supports prioritization. Always confirm findings against official and current field sources before acting.",
-        sourceTitle: "Open evidence layers", sourceCopy: "No proprietary or personal data is used in this prototype.",
-        sources: ["Building damage footprints", "Population estimates", "Damaged bridges", "Road network", "Helipads", "Settlements"],
+        sourceTitle: "Open evidence layers",
+        sourceCopy: "No proprietary or personal data is used. Each layer has its own method; quality is not uniform.",
+        sources: [
+          ["Overture + Microsoft AI for Good — building damage", "Overture footprints classified damaged/not-damaged by Microsoft AI for Good from post-event imagery. Computer vision, not a site inspection. Binary flag; clouds and debris cause errors."],
+          ["IHME — population grid", "Modeled usual residents from census and covariates, binned to ~1 km cells. Weight so empty hills do not outrank towns. Not a post-flood headcount or displacement register."],
+          ["HOT / OpenStreetMap — access and infrastructure", "Volunteer-mapped bridges, helipads, roads, settlements. Washed out / standing is a mapper tag. Isolation means a tagged damaged bridge within 5 km, not a confirmed cut-off."],
+          ["HDX — operational layers", "Humanitarian Data Exchange hosts public GeoJSON (flood extent, health, schools, open spaces, hydropower). HDX does not assess the flood. Quality equals the contributing HOT/OSM file, not NDRRMA."]
+        ],
         officialTitle: "Official resources",
         links: [["Nepal BIPAD Portal", "National disaster information", "https://bipadportal.gov.np/"], ["Humanitarian Data Exchange", "Open datasets for Nepal", "https://data.humdata.org/group/npl"], ["ReliefWeb Nepal", "Situation reports and updates", "https://reliefweb.int/country/npl"]]
       },
@@ -677,8 +683,14 @@
         methodTitle: "स्रोतदेखि प्रतिकार्यसम्म",
         method: [["सङ्कलन", "खुला क्षति, जनसंख्या र पूर्वाधार डेटाका मिति सहितका स्न्यापशट लोड गरिन्छ।"], ["मानकीकरण", "भौगोलिक ढाँचा डिकोड गरी सबै स्रोतलाई साझा निर्देशांकमा मिलाइन्छ।"], ["जोड्ने र क्रमबद्ध", "करिब १ किमी ग्रिडमा आवश्यकता र एकान्त सङ्केत जोडिन्छ।"], ["सोध्ने र नक्सा", "सरल भाषाको प्रश्नलाई सुरक्षित पढ्ने-मात्र क्वेरी र नक्साको जवाफमा बदलिन्छ।"]],
         methodNotice: "यो प्रोटोटाइपले प्राथमिकतामा सहयोग गर्छ। कार्य गर्नुअघि आधिकारिक र हालको फिल्ड स्रोतसँग सधैं पुष्टि गर्नुहोस्।",
-        sourceTitle: "खुला प्रमाण तहहरू", sourceCopy: "यस प्रोटोटाइपमा स्वामित्व वा व्यक्तिगत डेटा प्रयोग गरिएको छैन।",
-        sources: ["भवन क्षति", "जनसंख्या अनुमान", "क्षतिग्रस्त पुल", "सडक सञ्जाल", "हेलिप्याड", "बस्ती"],
+        sourceTitle: "खुला प्रमाण तहहरू",
+        sourceCopy: "स्वामित्व वा व्यक्तिगत डेटा छैन। प्रत्येक तहको आफ्नै विधि छ; गुणस्तर एकनास छैन।",
+        sources: [
+          ["Overture + Microsoft AI for Good — भवन क्षति", "Overture पदचिह्नलाई Microsoft AI for Good ले घटनापछिको तस्बिरबाट क्षतिग्रस्त/अक्षति वर्गीकरण गर्छ। कम्प्युटर दृष्टि, स्थलगत निरीक्षण होइन। द्विआधारी झण्डा; बादल र मलबाले त्रुटि हुन्छन्।"],
+          ["IHME — जनसङ्ख्या ग्रिड", "जनगणना र सहचरबाट मोडेल गरिएको सामान्य बसोबास, करिब १ किमि सेलमा। खाली पहाडलाई बजारभन्दा माथि नपार्न भार। बाढीपछिको गणना होइन।"],
+          ["HOT / OpenStreetMap — पहुँच र पूर्वाधार", "स्वयंसेवकले नक्सा गरेका पुल, हेलिप्याड, सडक, बस्ती। Washed out / standing म्यापरको ट्याग हो। अलग भनेको ५ किमिभित्र ट्याग गरिएको क्षतिग्रस्त पुल हो।"],
+          ["HDX — सञ्चालन तहहरू", "Humanitarian Data Exchange ले सार्वजनिक GeoJSON होस्ट गर्छ (बाढी क्षेत्र, स्वास्थ्य, विद्यालय, खुला स्थान, जलविद्युत)। HDX ले बाढी मूल्याङ्कन गर्दैन। गुणस्तर HOT/OSM फाइल बराबर; NDRRMA होइन।"]
+        ],
         officialTitle: "आधिकारिक स्रोतहरू",
         links: [["नेपाल BIPAD पोर्टल", "राष्ट्रिय विपद् सूचना", "https://bipadportal.gov.np/"], ["Humanitarian Data Exchange", "नेपालका खुला डेटासेट", "https://data.humdata.org/group/npl"], ["ReliefWeb नेपाल", "स्थिति प्रतिवेदन र अद्यावधिक", "https://reliefweb.int/country/npl"]]
       }
@@ -1171,7 +1183,15 @@
       text("sources").forEach(source => {
         const item = document.createElement("div");
         item.className = "source-item";
-        item.textContent = source;
+        if (Array.isArray(source)) {
+          const strong = document.createElement("strong");
+          strong.textContent = source[0];
+          const span = document.createElement("span");
+          span.textContent = source[1];
+          item.append(strong, span);
+        } else {
+          item.textContent = source;
+        }
         sourceList.appendChild(item);
       });
       const linkList = document.getElementById("link-list");

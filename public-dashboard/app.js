@@ -29,7 +29,39 @@ const copy = {
     readMethod: "Read methodology", methodologyLabel: "METHODOLOGY",
     howRanked: "How locations are ranked",
     methodCopy: "Buildings are grouped into approximately 1 km cells and joined to a population grid. Nearby damaged bridges increase the priority score as an access constraint. Helipad distance is shown as context but does not change the score.",
-    methodCaution: "These are relative triage indicators, not counts of casualties, displaced people or verified unmet need.",
+    methodCaution: "These are relative triage indicators, not counts of casualties, displaced people or verified unmet need. Each input is itself an estimate; multiplying them compounds uncertainty.",
+    sourceQualityTitle: "Where the inputs come from",
+    sourceQualityLead: "The rank is only as strong as the four open layers below. None is an official government assessment.",
+    sourceDetails: [
+      {
+        id: "damage",
+        name: "Overture + Microsoft AI for Good",
+        role: "Building damage",
+        method: "Overture supplies building footprints. Microsoft AI for Good classifies those footprints as damaged or not from post-event satellite or aerial imagery (flood and landslide). It is a computer-vision label, not a site inspection.",
+        quality: "Useful for where damage looks concentrated. Cloud, trees, and debris cause misses and false positives. The flag is binary—no severity, occupancy, or casualties. Under-mapped footprints never enter the score."
+      },
+      {
+        id: "population",
+        name: "IHME",
+        role: "Population grid",
+        method: "IHME’s gridded population raster estimates how many people usually live in each cell from census and covariates. We reproject and bin it to the same ~1 km cells as the buildings. This is modeled usual residence, not a post-flood headcount.",
+        quality: "Good as a weight so empty hills do not outrank towns. It will not show displacement after 26 Aug, and rural cells are coarser than they look. “People in damaged footprint” is an overlay estimate, not enumerated victims."
+      },
+      {
+        id: "access",
+        name: "HOT / OpenStreetMap",
+        role: "Access and infrastructure",
+        method: "Humanitarian OpenStreetMap Team volunteers map bridges, helipads, roads and settlements, often via a Tasking Manager. A separate bridge-damage layer records washed out / damaged / intact from imagery and field reports. Status is a mapper tag.",
+        quality: "Strong where someone mapped; thin in remote valleys. “Likely isolated” means a tagged damaged bridge within 5 km—not a confirmed cut-off village. Names and admin boundaries can be inconsistent."
+      },
+      {
+        id: "hdx",
+        name: "HDX (Humanitarian Data Exchange)",
+        role: "Operational layers",
+        method: "HDX hosts and timestamps public files; it does not assess the flood. We pull GeoJSON from the HOT Nepal flood package (extent, health, schools, open spaces, hydropower) with a checksum so unchanged files are skipped.",
+        quality: "Quality equals the contributing dataset. Flood extent is “observed 27 Aug” in that package, not a hydraulic model. Facility points can be incomplete or out of date. HDX is not NDRRMA, Nepal Police, or an official sitrep."
+      }
+    ],
     allDistricts: "All districts", search: "Search location", asOf: "Snapshot",
     isolatedFlag: "Likely isolated", estimatedPeople: "Estimated people", affectedCells: "affected cells",
     km: "km", unknown: "Unnamed cell"
@@ -62,7 +94,39 @@ const copy = {
     readMethod: "विधि पढ्नुहोस्", methodologyLabel: "विधि",
     howRanked: "स्थानहरू कसरी क्रमबद्ध गरिन्छन्",
     methodCopy: "भवनलाई करिब १ किमि सेलमा समूह गरी जनसङ्ख्या ग्रिडसँग जोडिएको छ। नजिकका क्षतिग्रस्त पुलले पहुँच अवरोधका रूपमा प्राथमिकता बढाउँछन्। हेलिप्याड दूरी सन्दर्भका लागि मात्र हो।",
-    methodCaution: "यी सापेक्ष प्राथमिकता सूचक हुन्; हताहती, विस्थापित व्यक्ति वा पुष्टि भएको आवश्यकताको गणना होइनन्।",
+    methodCaution: "यी सापेक्ष प्राथमिकता सूचक हुन्; हताहती, विस्थापित व्यक्ति वा पुष्टि भएको आवश्यकताको गणना होइनन्। प्रत्येक इनपुट आफैं अनुमान हो; गुणा गर्दा अनिश्चितता बढ्छ।",
+    sourceQualityTitle: "इनपुट कहाँबाट आउँछन्",
+    sourceQualityLead: "क्रम यी चार खुला तह जति बलियो हुन्छन्, त्यति मात्र बलियो छ। कुनै पनि आधिकारिक सरकारी मूल्याङ्कन होइन।",
+    sourceDetails: [
+      {
+        id: "damage",
+        name: "Overture + Microsoft AI for Good",
+        role: "भवन क्षति",
+        method: "Overture ले भवनका पदचिह्न दिन्छ। Microsoft AI for Good ले बाढी/पहिरो पछिको उपग्रह वा हवाई तस्बिरबाट ती पदचिह्नलाई क्षतिग्रस्त वा होइन भनी वर्गीकरण गर्छ। यो कम्प्युटर दृष्टि हो, स्थलगत निरीक्षण होइन।",
+        quality: "क्षति कहाँ बाक्लो देखिन्छ भन्ने संकेतका लागि उपयोगी। बादल, रूख र मलबाले छुट र गलत सकारात्मक हुन्छन्। झण्डा द्विआधारी हो—गम्भीरता, बसोबास वा हताहती छैन। नक्सा नभएका भवन स्कोरमा पर्दैनन्।"
+      },
+      {
+        id: "population",
+        name: "IHME",
+        role: "जनसङ्ख्या ग्रिड",
+        method: "IHME को ग्रिड जनसङ्ख्या रास्टरले जनगणना र सहचरबाट प्रत्येक सेलमा सामान्यतया कति मानिस बस्छन् अनुमान गर्छ। हामी यसलाई भवनकै करिब १ किमि सेलमा जोड्छौं। यो सामान्य बसोबासको मोडेल हो, बाढीपछिको गणना होइन।",
+        quality: "खाली पहाडलाई बजारभन्दा माथि नपार्न भारका रूपमा राम्रो। २६ अगस्टपछिको विस्थापन देखिँदैन। क्षतिग्रस्त क्षेत्रमा मानिस भनेको ओभरले अनुमान हो, गणना गरिएका पीडित होइनन्।"
+      },
+      {
+        id: "access",
+        name: "HOT / OpenStreetMap",
+        role: "पहुँच र पूर्वाधार",
+        method: "Humanitarian OpenStreetMap Team का स्वयंसेवकले पुल, हेलिप्याड, सडक र बस्ती नक्साङ्कन गर्छन्। छुट्टै पुल-क्षति तहमा washed out / damaged / intact ट्याग हुन्छ। स्थिति म्यापरको ट्याग हो।",
+        quality: "नक्सा भएको ठाउँमा बलियो; दुर्गम उपत्यकामा पातलो। «सम्भावित अलग» भनेको ५ किमिभित्र ट्याग गरिएको क्षतिग्रस्त पुल हो, पुष्टि भएको कटअफ गाउँ होइन।"
+      },
+      {
+        id: "hdx",
+        name: "HDX (Humanitarian Data Exchange)",
+        role: "सञ्चालन तहहरू",
+        method: "HDX ले सार्वजनिक फाइल होस्ट र मिति राख्छ; बाढी मूल्याङ्कन गर्दैन। हामी HOT नेपाल बाढी प्याकेजका GeoJSON (बाढी क्षेत्र, स्वास्थ्य, विद्यालय, खुला स्थान, जलविद्युत) चेकसम सहित तान्छौं।",
+        quality: "गुणस्तर योगदानकर्ताको डेटा बराबर हुन्छ। बाढी क्षेत्र त्यो प्याकेजमा «२७ अगस्ट अवलोकित» हो, हाइड्रोलिक मोडेल होइन। HDX NDRRMA वा प्रहरीको आधिकारिक बुलेटिन होइन।"
+      }
+    ],
     allDistricts: "सबै जिल्ला", search: "स्थान खोज्नुहोस्", asOf: "स्न्यापसट",
     isolatedFlag: "सम्भावित अलग", estimatedPeople: "अनुमानित मानिस", affectedCells: "प्रभावित सेल",
     km: "किमि", unknown: "नाम नभएको सेल"
@@ -367,6 +431,37 @@ function renderCounts() {
   document.getElementById("count-helipads").textContent = state.helipads.length;
 }
 
+function renderSourceQuality() {
+  const container = document.getElementById("source-quality-list");
+  container.replaceChildren();
+  getText("sourceDetails").forEach(source => {
+    const card = document.createElement("article");
+    card.className = "source-quality";
+    card.id = `source-${source.id}`;
+    const name = document.createElement("strong");
+    name.textContent = source.name;
+    const role = document.createElement("div");
+    role.className = "role";
+    role.textContent = source.role;
+    const method = document.createElement("p");
+    method.textContent = source.method;
+    const quality = document.createElement("p");
+    quality.className = "quality";
+    quality.textContent = source.quality;
+    card.append(name, role, method, quality);
+    container.appendChild(card);
+  });
+}
+
+function openMethod(sourceId) {
+  const dialog = document.getElementById("method-dialog");
+  dialog.showModal();
+  if (!sourceId) return;
+  window.setTimeout(() => {
+    document.getElementById(`source-${sourceId}`)?.scrollIntoView({ block: "center" });
+  }, 50);
+}
+
 function populateDistricts() {
   const select = document.getElementById("district-filter");
   const selected = select.value;
@@ -404,6 +499,7 @@ function setLanguage(language) {
   populateDistricts();
   renderMetrics();
   renderDistricts();
+  renderSourceQuality();
   applyFilters();
 }
 
@@ -450,15 +546,19 @@ function bindEvents() {
     );
     applyFilters();
   });
-  const dialog = document.getElementById("method-dialog");
-  document.getElementById("open-method").addEventListener("click", () => dialog.showModal());
+  document.getElementById("open-method").addEventListener("click", () => openMethod());
   document.getElementById("footer-method").addEventListener("click", event => {
     event.preventDefault();
-    dialog.showModal();
+    openMethod();
   });
-  document.getElementById("close-method").addEventListener("click", () => dialog.close());
-  dialog.addEventListener("click", event => {
-    if (event.target === dialog) dialog.close();
+  document.querySelectorAll("[data-source]").forEach(button => {
+    button.addEventListener("click", () => openMethod(button.dataset.source));
+  });
+  document.getElementById("close-method").addEventListener("click", () => {
+    document.getElementById("method-dialog").close();
+  });
+  document.getElementById("method-dialog").addEventListener("click", event => {
+    if (event.target === event.currentTarget) event.currentTarget.close();
   });
 }
 
@@ -471,6 +571,7 @@ async function start() {
     renderMetrics();
     renderCounts();
     renderDistricts();
+    renderSourceQuality();
     renderOverlayLayers();
     applyFilters();
     document.getElementById("loading").classList.add("hidden");

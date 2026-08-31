@@ -338,9 +338,19 @@ tbody tr:hover { background: #fbf7f7; }
   background: var(--navy);
 }
 .source-strip h2 { margin: 0; font-size: 16px; }
-.source-list { display: flex; gap: 32px; }
-.source-list > span { font-size: 11px; font-weight: 700; }
-.source-list small { margin-top: 2px; display: block; color: #9dafbe; font-size: 9px; font-weight: 400; }
+.source-list { display: flex; gap: 18px; flex-wrap: wrap; }
+.source-chip {
+  max-width: 220px;
+  padding: 0;
+  color: white;
+  text-align: left;
+  background: none;
+  border: 0;
+  font-size: 11px;
+  font-weight: 700;
+}
+.source-chip small { margin-top: 2px; display: block; color: #9dafbe; font-size: 9px; font-weight: 400; }
+.source-chip:hover small { color: white; }
 footer {
   padding: 18px clamp(20px, 4vw, 64px);
   display: flex;
@@ -354,16 +364,38 @@ footer p { margin: 0; }
 footer a { color: var(--navy); font-weight: 700; }
 
 dialog {
-  width: min(560px, calc(100vw - 32px));
+  width: min(720px, calc(100vw - 32px));
+  max-height: calc(100vh - 48px);
   padding: 34px;
+  overflow: auto;
   border: 0;
   box-shadow: 0 28px 80px rgba(8,23,37,.3);
 }
 dialog::backdrop { background: rgba(10,25,39,.72); }
 dialog h2 { margin: 0 0 18px; font-size: 26px; }
+dialog h3 { margin: 28px 0 8px; font-size: 15px; letter-spacing: -.01em; }
 dialog p { color: var(--muted); font-size: 13px; line-height: 1.6; }
 .dialog-close { position: absolute; top: 12px; right: 15px; padding: 3px 8px; color: var(--muted); background: none; border: 0; font-size: 24px; }
 .formula { margin: 8px 0; padding: 12px; color: var(--navy); background: #eef3f7; font-size: 12px; overflow: auto; }
+.source-quality-lead { margin: 0 0 14px; }
+.source-quality-list { display: grid; gap: 10px; }
+.source-quality {
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  background: #f7f8f9;
+}
+.source-quality strong { display: block; font-size: 13px; }
+.source-quality .role {
+  margin: 3px 0 8px;
+  color: var(--red);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.source-quality p { margin: 0 0 6px; font-size: 12px; }
+.source-quality p:last-child { margin: 0; }
+.source-quality .quality { color: var(--navy); }
 
 .loading-screen {
   z-index: 2000;
