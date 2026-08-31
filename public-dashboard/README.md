@@ -1,15 +1,17 @@
 # Nepal Flood Response Map
 
-Public, static dashboard backed by a governed snapshot of
-`rautsamir.nepal_flood_response`. It has no Databricks credentials, warehouse
+Public, static dashboard backed by a governed snapshot of the
+`nepal_flood_response` schema. It has no Databricks credentials, warehouse
 connection, or LLM calls in the browser.
 
 ## Refresh the snapshot
 
-From the repository root:
+From the repository root, using your workspace env or CLI profile:
 
 ```bash
-python3 scripts/export_public_snapshot.py --profile sled-demo-dbx
+python3 scripts/export_public_snapshot.py \
+  --catalog YOUR_CATALOG \
+  --warehouse-id YOUR_SQL_WAREHOUSE_ID
 ```
 
 The exporter uses fixed read-only SQL and replaces the files in `data/`.

@@ -12,10 +12,10 @@
     {
       "task_key": "ingest_hdx_resources",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/samir.raut@databricks.com/unfrc-hdx-ingestion/hdx_ingestion",
+        "notebook_path": "/Workspace/Shared/unfrc-hdx-ingestion/hdx_ingestion",
         "source": "WORKSPACE",
         "base_parameters": {
-          "catalog": "rautsamir",
+          "catalog": "main",
           "schema": "nepal_flood_response",
           "volume": "source_files"
         }

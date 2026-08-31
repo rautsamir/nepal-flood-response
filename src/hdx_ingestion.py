@@ -29,7 +29,7 @@ from pyspark.sql.types import (
     TimestampType,
 )
 
-dbutils.widgets.text("catalog", "rautsamir")
+dbutils.widgets.text("catalog", "main")
 dbutils.widgets.text("schema", "nepal_flood_response")
 dbutils.widgets.text("volume", "source_files")
 
@@ -40,7 +40,7 @@ FQ = f"`{CATALOG}`.`{SCHEMA}`"
 VOLUME_ROOT = f"/Volumes/{CATALOG}/{SCHEMA}/{VOLUME}/hdx"
 STATE_TABLE = f"{FQ}.`hdx_ingestion_state`"
 HDX_API = "https://data.humdata.org/api/3/action/resource_show?id={resource_id}"
-USER_AGENT = "UNFRC-HDX-Ingestion/1.0 (samir.raut@databricks.com)"
+USER_AGENT = "UNFRC-HDX-Ingestion/1.0"
 
 RESOURCES = [
     {

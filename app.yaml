@@ -9,8 +9,8 @@ env:
   - name: DATABRICKS_SERVING_ENDPOINT
     value: databricks-claude-sonnet-4-6
   - name: SQL_WAREHOUSE_ID
-    value: a5a3dba67a13c1b8
+    value: YOUR_SQL_WAREHOUSE_ID
   - name: UNFRC_CATALOG
-    value: rautsamir
+    value: YOUR_CATALOG
   - name: UNFRC_SCHEMA
     value: nepal_flood_response

@@ -28,8 +28,8 @@ from databricks.sdk.service.serving import ChatMessage, ChatMessageRole
 from backend.sql_cache import SqlCache
 
 SERVING_ENDPOINT = os.environ.get("DATABRICKS_SERVING_ENDPOINT", "databricks-claude-sonnet-4-6")
-WAREHOUSE_ID = os.environ.get("SQL_WAREHOUSE_ID", "a5a3dba67a13c1b8")
-CATALOG = os.environ.get("UNFRC_CATALOG", "rautsamir")
+WAREHOUSE_ID = os.environ.get("SQL_WAREHOUSE_ID", "")
+CATALOG = os.environ.get("UNFRC_CATALOG", "main")
 SCHEMA = os.environ.get("UNFRC_SCHEMA", "nepal_flood_response")
 FQ = f"{CATALOG}.{SCHEMA}"
 

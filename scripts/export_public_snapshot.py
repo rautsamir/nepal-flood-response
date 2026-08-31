@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
@@ -18,17 +19,29 @@ from typing import Any, Iterable
 from databricks.sdk import WorkspaceClient
 
 
-DEFAULT_CATALOG = "rautsamir"
 DEFAULT_SCHEMA = "nepal_flood_response"
-DEFAULT_WAREHOUSE = "a5a3dba67a13c1b8"
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--profile", default="sled-demo-dbx")
-    parser.add_argument("--catalog", default=DEFAULT_CATALOG)
-    parser.add_argument("--schema", default=DEFAULT_SCHEMA)
-    parser.add_argument("--warehouse-id", default=DEFAULT_WAREHOUSE)
+    parser.add_argument(
+        "--profile",
+        default=os.environ.get("DATABRICKS_CONFIG_PROFILE"),
+        help="Optional Databricks CLI profile. Falls back to DATABRICKS_* env vars.",
+    )
+    parser.add_argument(
+        "--catalog",
+        default=os.environ.get("UNFRC_CATALOG"),
+        required=not os.environ.get("UNFRC_CATALOG"),
+        help="Unity Catalog name that holds the flood-response schema.",
+    )
+    parser.add_argument("--schema", default=os.environ.get("UNFRC_SCHEMA", DEFAULT_SCHEMA))
+    parser.add_argument(
+        "--warehouse-id",
+        default=os.environ.get("SQL_WAREHOUSE_ID"),
+        required=not os.environ.get("SQL_WAREHOUSE_ID"),
+        help="SQL warehouse used for the read-only snapshot queries.",
+    )
     parser.add_argument(
         "--output",
         type=Path,
@@ -112,7 +125,7 @@ def write_json(path: Path, payload: Any) -> None:
 def main() -> None:
     args = parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
-    client = WorkspaceClient(profile=args.profile)
+    client = WorkspaceClient(profile=args.profile) if args.profile else WorkspaceClient()
     fq = f"`{args.catalog}`.`{args.schema}`"
 
     cells = query(
